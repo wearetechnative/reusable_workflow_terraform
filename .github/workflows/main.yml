@@ -1,0 +1,13 @@
+name: Test terraform modules
+# Changed 'on' to enable this workflow to be called from other workflows
+on:
+  workflow_call:
+jobs: 
+  test: 
+    runs-on: ubuntu-latest
+    steps: 
+      - name: checkout repo
+        uses: actions/checkout@v3
+
+      - name: run the bash script          
+      - run: ${{ github.action_path }}/module_checker.sh
