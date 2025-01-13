@@ -16,6 +16,8 @@ jobs:
           #token: ${{ secrets.GIT_ACCESS_TOKEN }}
           path: reusable-workflow-repo
 
+      - name: Give script permissions
+        run: chmod +x ${GITHUB_WORKSPACE}/reusable-workflow-repo/module_checker.sh
 
       - name: run the bash script          
         run: ${GITHUB_WORKSPACE}/reusable-workflow-repo/module_checker.sh
