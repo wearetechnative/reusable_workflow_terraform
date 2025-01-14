@@ -1,5 +1,5 @@
 name: Test terraform modules
-# Changed 'on' to enable this workflow to be called from other workflows
+
 on:
   workflow_call:
 jobs: 
@@ -24,8 +24,6 @@ jobs:
         #   with:
         #     repository: wearetechnative/reusable_workflow_terraform
         #     path: reusable-workflow-repo
-
-
 
         # - name: Give script permissions
         #   run: chmod +x ${GITHUB_WORKSPACE}/reusable-workflow-repo/module_checker.sh
