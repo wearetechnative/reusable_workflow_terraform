@@ -8,6 +8,11 @@ jobs:
     steps: 
       - name: checkout repo
         uses: actions/checkout@v4
+              
+      - name: tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          soft_fail: true
 
       - name: Checkout reusable workflow dir
         uses: actions/checkout@v4
