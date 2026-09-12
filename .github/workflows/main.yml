@@ -9,12 +9,14 @@ jobs:
       - name: checkout repo
         uses: actions/checkout@v4
               
-      - name: tfsec
-        uses: aquasecurity/tfsec-action@v1.0.3
+      - name: trivy config scan
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
-          soft_fail: true
+          scan-type: config
+          scan-ref: .
+          exit-code: 0
           
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v4
       - name: Terraform Init
         id: init
         run: terraform init
