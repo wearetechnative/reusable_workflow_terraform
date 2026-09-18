@@ -1,0 +1,98 @@
+name: Lint
+
+on:
+  workflow_call:
+    inputs:
+      strict:
+        description: >-
+          Fail the build when TFLint reports findings. Leave false while a
+          repository still has findings to clean up; a TFLint *error* (a config
+          it cannot parse) fails the build either way.
+        type: boolean
+        default: false
+      skip-validate:
+        description: >-
+          Skip terraform validate. Set this for modules that declare
+          configuration_aliases: as a root module there is no aliased provider
+          configured, so validate reports "missing provider" by design.
+        type: boolean
+        default: false
+
+jobs:
+  tflint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v5
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v6
+        with:
+          # Pinned deliberately. The default is "latest", which would let a new
+          # TFLint release turn every consumer red overnight.
+          tflint_version: v0.64.0
+
+      - name: Show version
+        run: tflint --version
+
+      - name: Run TFLint
+        run: |
+          set +e
+          # --recursive matters: several modules keep all their .tf files in
+          # subdirectories, and a root-only run passes while checking nothing.
+          tflint --recursive -f compact
+          code=$?
+          set -e
+          case "$code" in
+            0) echo "No findings." ;;
+            2) if [ "${{ inputs.strict }}" = "true" ]; then
+                 echo "::error::TFLint findings, and strict is enabled."
+                 exit 2
+               fi
+               echo "::warning::TFLint findings. Not failing because strict is disabled."
+               ;;
+            *) echo "::error::TFLint exited with $code - this is an error, not a finding."
+               exit "$code"
+               ;;
+          esac
+
+  validate:
+    if: ${{ !inputs.skip-validate }}
+    runs-on: ubuntu-latest
+
+    env:
+      TF_IN_AUTOMATION: '1'
+      TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.terraform-plugin-cache
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v5
+
+      - name: Setup Terraform
+        # Deliberately unpinned: every required_version constraint in these
+        # modules is a lower bound, so the newest release satisfies them all,
+        # and it is what consumers actually run.
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_wrapper: false
+
+      - name: Cache provider plugins
+        uses: actions/cache@v5
+        with:
+          path: ${{ github.workspace }}/.terraform-plugin-cache
+          key: ${{ runner.os }}-tfproviders-${{ hashFiles('**/*.tf') }}
+          restore-keys: ${{ runner.os }}-tfproviders-
+
+      - name: Validate every module directory
+        run: |
+          mkdir -p "$TF_PLUGIN_CACHE_DIR"
+          fail=0
+          # The plugin cache has no locking, so these run one at a time.
+          for dir in $(find . -name '*.tf' -not -path './.git/*' -printf '%h\n' | sort -u); do
+            echo "::group::$dir"
+            terraform -chdir="$dir" init -backend=false -input=false -no-color || fail=1
+            terraform -chdir="$dir" validate -no-color || fail=1
+            echo "::endgroup::"
+          done
+          exit $fail
