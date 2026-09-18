@@ -84,6 +84,16 @@ jobs:
           key: ${{ runner.os }}-tfproviders-${{ hashFiles('**/*.tf') }}
           restore-keys: ${{ runner.os }}-tfproviders-
 
+      - name: Fetch git module sources over HTTPS
+        # Several modules pin their sources in SSH form (git@github.com:owner/repo).
+        # The runner has no SSH key, so terraform init fails to clone them even
+        # though every one of those targets is a public repository. Rewriting to
+        # HTTPS makes them fetchable without adding a secret. Sources that are
+        # genuinely private stay unreachable, which is the correct outcome.
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+
       - name: Validate every module directory
         run: |
           mkdir -p "$TF_PLUGIN_CACHE_DIR"
