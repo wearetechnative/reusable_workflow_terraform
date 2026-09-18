@@ -1,0 +1,34 @@
+name: Security scan
+
+on:
+  workflow_call:
+    inputs:
+      block-on:
+        description: >-
+          Comma-separated Trivy severities that must fail the build, e.g.
+          "HIGH,CRITICAL". Leave unset to report findings without failing, which
+          is the right setting for a repository that has not been cleaned up yet.
+        type: string
+        default: ''
+
+jobs:
+  trivy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v5
+
+      - name: Trivy config scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: config
+          scan-ref: .
+          # When block-on is set, only those severities are reported and any hit
+          # fails the build. When it is empty, everything is reported and the
+          # build always passes.
+          severity: ${{ inputs.block-on != '' && inputs.block-on || 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL' }}
+          exit-code: ${{ inputs.block-on != '' && '1' || '0' }}
+          # Authenticates the checks-bundle pull against ghcr.io so the scan does
+          # not depend on the anonymous rate limit.
+          github-pat: ${{ github.token }}
