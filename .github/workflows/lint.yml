@@ -36,6 +36,24 @@ jobs:
       - name: Show version
         run: tflint --version
 
+      # Revived from module_checker.sh, which sat commented out in the old
+      # shared workflow while six repositories quietly violated the rule it
+      # was written to enforce. The validate job rewrites git@ URLs so a
+      # runner can fetch them, but a module that needs that rewrite only
+      # builds inside this CI - not on a developer machine without a key,
+      # and not for a consumer.
+      - name: Module sources must not use git@
+        run: |
+          hits=$(grep -rniE 'source[[:space:]]*=[[:space:]]*"git@' --include='*.tf' . || true)
+          if [ -n "$hits" ]; then
+            echo "$hits"
+            echo "::error::Module sources must use git::https://github.com/... , not git@github.com:"
+            if [ "${{ inputs.strict }}" = "true" ]; then exit 1; fi
+            echo "::warning::Not failing because strict is disabled."
+          else
+            echo "No git@ module sources."
+          fi
+
       - name: Run TFLint
         run: |
           set +e

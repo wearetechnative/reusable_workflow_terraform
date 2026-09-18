@@ -13,6 +13,12 @@ version or an action pin is changed here once rather than in 53 repositories.
 | `strict`        | boolean | `false` | Fail the build on TFLint findings                            |
 | `skip-validate` | boolean | `false` | Skip `terraform validate` entirely                           |
 
+The job also refuses `git@github.com:` module sources. The validate job rewrites
+those URLs so a runner can fetch them, but a module that needs that rewrite only
+builds inside this CI - not on a developer machine without a key, and not for a
+consumer. Use `git::https://github.com/...`. Like a TFLint finding, this fails
+the build only when `strict` is set.
+
 TFLint runs with `--recursive`. Several modules keep all their `.tf` files in
 subdirectories, where a root-only run passes while checking nothing.
 
