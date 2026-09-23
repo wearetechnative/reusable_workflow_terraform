@@ -37,6 +37,18 @@ reports `missing provider` by design rather than because anything is wrong.
 | ---------- | ------ | ------- | ---------------------------------------------------------- |
 | `block-on` | string | `''`    | Trivy severities that fail the build, e.g. `HIGH,CRITICAL` |
 
+The scan applies an organisation-wide policy written by the workflow itself, so
+it is one decision rather than fifty-four:
+
+- **Downloaded modules are excluded.** A module repository answers for its own
+  code. Trivy otherwise follows module sources and reports findings from other
+  repositories here, where they cannot be fixed and where they are already
+  reported by the repository that owns them.
+- **AWS-0132** (S3 without a Customer Managed Key) and **AWS-0104**
+  (unrestricted egress) are accepted. Both describe a policy preference rather
+  than a defect, and the reasons are recorded in the workflow next to the rule
+  ids. Everything else still fires.
+
 Unset, every severity is reported and the build always passes. That is the
 correct setting for a repository whose findings have not been cleaned up yet —
 turn it on per repository once that repository is clean, not organisation-wide.

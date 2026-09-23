@@ -19,11 +19,43 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v5
 
+      # Organisation-wide scanning policy, kept here rather than in 54
+      # repositories so it is one decision instead of fifty-four.
+      - name: Write the organisation scanning policy
+        run: |
+          cat > .trivy-org.yaml <<'YAML'
+          misconfiguration:
+            terraform:
+              # A module repository is responsible for its own code. Trivy
+              # otherwise follows module sources and reports findings from other
+              # repositories here, where they cannot be fixed - and where they
+              # are already reported, in the repository that owns them.
+              exclude-downloaded-modules: true
+          YAML
+          cat > .trivy-org.ignore <<'IGNORE'
+          # Accepted organisation-wide. Each entry is a deliberate decision, not
+          # a backlog: these rules describe a policy preference rather than a
+          # defect, and leaving them to accumulate teaches people to ignore the
+          # scan.
+
+          # S3 encryption should use a Customer Managed Key. SSE-S3 is accepted:
+          # requiring a CMK would oblige every consumer to provision and pay for
+          # a key, which is an interface decision, not a module defect.
+          AWS-0132
+
+          # Unrestricted egress on a security group. Compute nodes generally need
+          # outbound access to package repositories, S3 and control planes;
+          # narrowing it is a network design choice made by the consumer.
+          AWS-0104
+          IGNORE
+
       - name: Trivy config scan
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: config
           scan-ref: .
+          trivy-config: .trivy-org.yaml
+          trivyignores: .trivy-org.ignore
           # When block-on is set, only those severities are reported and any hit
           # fails the build. When it is empty, everything is reported and the
           # build always passes.
