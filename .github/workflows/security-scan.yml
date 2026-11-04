@@ -1,4 +1,5 @@
 name: Security scan
+permissions: {}
 
 on:
   workflow_call:
@@ -13,11 +14,14 @@ on:
 
 jobs:
   trivy:
+    name: Trivy Scan
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       # Organisation-wide scanning policy, kept here rather than in 54
       # repositories so it is one decision instead of fifty-four.
@@ -50,7 +54,7 @@ jobs:
           IGNORE
 
       - name: Trivy config scan
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: config
           scan-ref: .
