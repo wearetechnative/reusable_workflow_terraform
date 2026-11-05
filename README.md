@@ -119,3 +119,26 @@ Two caveats that have already cost time:
 
 Use `tfswitch <version>` when a module's `required_version` exceeds the
 terraform you have installed.
+
+## Maintaining Workflows
+
+### Update GitHub Actions
+
+To keep these workflows up-to-date it is recommended to use [pinact](https://github.com/suzuki-shunsuke/pinact).
+You can run pinact with the following arguments to update the workflows automatically.
+
+```bash
+GITHUB_TOKEN="$(gh auth token)" pinact run -v -u
+```
+
+This will show which actions are updated and will update the worklfows automatically.
+
+### Check Workflow security
+
+To check and validate the workflows for possible security issues or optimizations you can run [zizmor](https://github.com/zizmorcore/zizmor).
+Zizmor is also configured as a Workflow for this repository it self, which will alert if anything is not correct.
+To run it locally you can run it this way.
+
+```bash
+zizmor -p --gh-token=$(gh auth token) .github/
+```
